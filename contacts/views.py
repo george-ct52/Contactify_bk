@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Contact
-from .serializers import ContactSerializer
+from .serializers import ContactSerializer, ContactUpdateSerializer
 
 @api_view(['POST'])
 def create_contact(request):
@@ -21,21 +21,25 @@ def get_contacts(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['PUT'])
+@api_view(['GET', 'PUT'])
 def update_contact(request, pk):
     try:
         contact = Contact.objects.get(pk=pk)
     except Contact.DoesNotExist:
         return Response({"error": "Contact not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'PUT':
+    if request.method == 'GET':
+        # Return current contact data before updating
+        serializer = ContactUpdateSerializer(contact)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'PUT':
         serializer = ContactSerializer(contact, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['DELETE'])
 def delete_contact(request, pk):
